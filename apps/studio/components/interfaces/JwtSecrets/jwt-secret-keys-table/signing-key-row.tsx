@@ -101,71 +101,84 @@ export const SigningKeyRow = ({
       />
     </TableCell>
     <TableCell className="text-right py-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button type="text" className="px-2" icon={<MoreVertical className="size-4" />} />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {signingKey.algorithm !== 'HS256' && (
-            <DropdownMenuItem
-              onSelect={() => {
-                setSelectedKey(signingKey)
-                setShownDialog('key-details')
-              }}
-            >
-              <Eye className="mr-2 size-4" />
-              View key details
-            </DropdownMenuItem>
-          )}
-          {signingKey.status === 'standby' && (
-            <>
-              <DropdownMenuItem
-                onSelect={() => handlePreviouslyUsedKey(signingKey.id)}
-                className="text-destructive"
-              >
-                <CircleArrowDown className="mr-2 size-4" />
-                Move to previously used
-              </DropdownMenuItem>
-            </>
-          )}
-          {signingKey.status === 'previously_used' && (
-            <>
-              <DropdownMenuItem
-                onSelect={() => {
-                  handleStandbyKey(signingKey.id)
-                }}
-                disabled={!!standbyKey}
-              >
-                <CircleArrowUp className="mr-2 size-4" />
-                Move to standby key
-              </DropdownMenuItem>
+      {(signingKey.status !== 'in_use' || signingKey.algorithm !== 'HS256') && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="text" className="px-2" icon={<MoreVertical className="size-4" />} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {signingKey.algorithm !== 'HS256' && (
               <DropdownMenuItem
                 onSelect={() => {
                   setSelectedKey(signingKey)
-                  setShownDialog('revoke')
+                  setShownDialog('key-details')
                 }}
-                className="text-destructive"
               >
-                <ShieldOff className="mr-2 size-4" />
-                Revoke key
+                <Eye className="mr-2 size-4" />
+                View key details
               </DropdownMenuItem>
-            </>
-          )}
-          {signingKey.status === 'revoked' && (
-            <DropdownMenuItem
-              onSelect={() => {
-                setSelectedKey(signingKey)
-                setShownDialog('delete')
-              }}
-              className="text-destructive"
-              disabled={legacyKey.id === signingKey.id}
-            >
-              <Trash2 className="mr-2 size-4" />
-              Delete permanently
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )}
+            {signingKey.status === 'standby' && (
+              <>
+                <DropdownMenuItem
+                  onSelect={() => handlePreviouslyUsedKey(signingKey.id)}
+                  className="text-destructive"
+                >
+                  <CircleArrowDown className="mr-2 size-4" />
+                  Move to previously used
+                </DropdownMenuItem>
+              </>
+            )}
+            {signingKey.status === 'previously_used' && (
+              <>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    handleStandbyKey(signingKey.id)
+                  }}
+                  disabled={!!standbyKey}
+                >
+                  <CircleArrowUp className="mr-2 size-4" />
+                  Move to standby key
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setSelectedKey(signingKey)
+                    setShownDialog('revoke')
+                  }}
+                  className="text-destructive"
+                >
+                  <ShieldOff className="mr-2 size-4" />
+                  Revoke key
+                </DropdownMenuItem>
+              </>
+            )}
+            {signingKey.status === 'revoked' && (
+              <>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    handleStandbyKey(signingKey.id)
+                  }}
+                  disabled={!!standbyKey}
+                >
+                  <CircleArrowUp className="mr-2 size-4" />
+                  Move to standby key
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setSelectedKey(signingKey)
+                    setShownDialog('delete')
+                  }}
+                  className="text-destructive"
+                  disabled={legacyKey.id === signingKey.id}
+                >
+                  <Trash2 className="mr-2 size-4" />
+                  Delete permanently
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </TableCell>
   </MotionTableRow>
 )

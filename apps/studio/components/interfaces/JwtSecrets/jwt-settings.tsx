@@ -33,6 +33,8 @@ import { useAuthConfigUpdateMutation } from 'data/auth/auth-config-update-mutati
 import { useJwtSecretUpdateMutation } from 'data/config/jwt-secret-update-mutation'
 import { useJwtSecretUpdatingStatusQuery } from 'data/config/jwt-secret-updating-status-query'
 import { useProjectPostgrestConfigQuery } from 'data/config/project-postgrest-config-query'
+import { useLegacyJWTSigningKeyQuery } from 'data/jwt-signing-keys/legacy-jwt-signing-key-query'
+import { useLegacyAPIKeysStatusQuery } from 'data/api-keys/legacy-api-keys-status-query'
 import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
 import { uuidv4 } from 'lib/helpers'
 import {
@@ -87,6 +89,11 @@ const JWTSettings = () => {
   const { data: config, isError } = useProjectPostgrestConfigQuery({ projectRef })
   const { mutateAsync: updateJwt, isLoading: isSubmittingJwtSecretUpdateRequest } =
     useJwtSecretUpdateMutation()
+
+  const { data: legacyKey } = useLegacyJWTSigningKeyQuery({
+    projectRef,
+  })
+  const { data: legacyAPIKeysStatus } = useLegacyAPIKeysStatusQuery({ projectRef })
 
   const {
     data: authConfig,
@@ -185,8 +192,47 @@ const JWTSettings = () => {
                   </div>
                 ) : (
                   <>
+                    {legacyKey && legacyKey.status !== 'revoked' && (
+                      <Admonition type="warning">
+                        You've successfully migrated your legacy JWT secret to the new JWT Signing
+                        Keys feature. Changing the legacy JWT secret now can only be done by
+                        rotating to a standby key and finally revoking it. Now used to{' '}
+                        <em className="text-brand not-italic">
+                          {legacyKey.status === 'in_use' ? 'sign and verify' : 'only verify'}
+                        </em>{' '}
+                        JSON Web Tokens by Supabase products.{' '}
+                        {legacyAPIKeysStatus && legacyAPIKeysStatus.enabled && (
+                          <>
+                            <em className="text-warning not-italic">
+                              This includes the <code>anon</code> and <code>service_role</code> JWT
+                              based API keys.
+                            </em>{' '}
+                            Consider switching to publishable and secret API keys to disable them.
+                          </>
+                        )}
+                        <br />
+                        <br />
+                        <Button type="default" asChild icon={<ExternalLink className="size-4" />}>
+                          <Link href={`/project/${projectRef}/settings/api-keys`}>
+                            Go to API keys
+                          </Link>
+                        </Button>
+                      </Admonition>
+                    )}
+                    {legacyKey && legacyKey.status === 'revoked' && (
+                      <Admonition type="info">
+                        Your project has revoked the legacy JWT secret. No new JSON Web Tokens are
+                        issued nor verified with it by Supabase products.
+                      </Admonition>
+                    )}
                     <Input
-                      label="Legacy JWT Secret"
+                      label={
+                        legacyKey?.status === 'revoked'
+                          ? 'Revoked legacy JWT secret'
+                          : legacyKey
+                            ? 'Legacy JWT secret (still used)'
+                            : 'Legacy JWT secret'
+                      }
                       readOnly
                       copy={canReadJWTSecret && isNotUpdatingJwtSecret}
                       reveal={canReadJWTSecret && isNotUpdatingJwtSecret}
@@ -202,7 +248,11 @@ const JWTSettings = () => {
                       }
                       className="input-mono"
                       descriptionText={
-                        'Used to decode your JWTs. You can also use this to mint your own JWTs.'
+                        legacyKey?.status === 'revoked'
+                          ? 'No longer used to sign JWTs by Supabase Auth.'
+                          : !legacyKey || legacyKey.status === 'in_use'
+                            ? 'Used to sign and verify JWTs issued by Supabase Auth.'
+                            : 'Used only to verify JWTs.'
                       }
                       layout="horizontal"
                     />
@@ -218,7 +268,7 @@ const JWTSettings = () => {
                       disabled={!canUpdateConfig || isLoadingAuthConfig}
                     />
 
-                    {newJwtSecrets && (
+                    {newJwtSecrets && !legacyKey && (
                       <>
                         {isUpdatingJwtSecret && (
                           <div className="flex items-center space-x-2">
