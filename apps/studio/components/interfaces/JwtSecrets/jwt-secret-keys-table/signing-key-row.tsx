@@ -106,15 +106,17 @@ export const SigningKeyRow = ({
           <Button type="text" className="px-2" icon={<MoreVertical className="size-4" />} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onSelect={() => {
-              setSelectedKey(signingKey)
-              setShownDialog('key-details')
-            }}
-          >
-            <Eye className="mr-2 size-4" />
-            View key details
-          </DropdownMenuItem>
+          {signingKey.algorithm !== 'HS256' && (
+            <DropdownMenuItem
+              onSelect={() => {
+                setSelectedKey(signingKey)
+                setShownDialog('key-details')
+              }}
+            >
+              <Eye className="mr-2 size-4" />
+              View key details
+            </DropdownMenuItem>
+          )}
           {signingKey.status === 'standby' && (
             <>
               <DropdownMenuItem
